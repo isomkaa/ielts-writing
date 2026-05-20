@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — IELTSPro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink: #0d1117; --accent: #2a6ef5; --gold: #f0b429; --bg: #f0f4f9; --card: #fff; --border: #e2e8f0; --muted: #64748b; --success: #10b981; --danger: #ef4444; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: var(--ink); padding: 28px 20px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: white; margin-bottom: 32px; padding: 0 8px; }
+    .logo span { color: var(--gold); }
+    .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,0.55); font-size: 0.9rem; text-decoration: none; transition: all 0.18s; cursor: pointer; }
+    .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.07); color: white; }
+    .nav-link .icon { font-size: 1.1rem; width: 22px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .main { flex: 1; padding: 40px; overflow-y: auto; }
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 4px; }
+    .page-header p { color: var(--muted); font-size: 0.92rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+    .stat-num { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .stat-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 20px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .card-title { font-size: 1.1rem; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { text-align: left; padding: 10px 12px; background: #f8fafc; border-bottom: 1px solid var(--border); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+    .badge-green { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-gray { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .badge-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .action-btn { padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-family: 'DM Sans', sans-serif; cursor: pointer; border: 1px solid var(--border); background: white; transition: all 0.15s; }
+    .action-btn:hover { background: #f1f5f9; }
+    .action-btn.danger { color: var(--danger); border-color: #fecaca; }
+    .action-btn.danger:hover { background: #fef2f2; }
+    .action-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    .action-btn.primary:hover { background: #1d4ed8; }
+    .action-btn.success { background: var(--success); color: white; border-color: var(--success); }
+    .action-btn.success:hover { background: #059669; }
+    .action-btn.gold { background: #f0b429; color: #1a1200; border-color: #f0b429; }
+    .action-btn.gold:hover { background: #d4991f; }
+    .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    /* Modals */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: #374151; margin-bottom: 7px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.93rem; color: var(--ink); outline: none; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .modal-btns { display: flex; gap: 12px; margin-top: 20px; }
+    .modal-btns button { flex: 1; padding: 12px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; border: none; }
+    .btn-cancel { background: #f1f5f9; color: var(--ink); }
+    .btn-save { background: var(--accent); color: white; }
+    .btn-score { background: #10b981; color: white; }
+    .add-btn { background: var(--accent); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .add-btn:hover { background: #1d4ed8; }
+    .answer-preview { font-size: 0.82rem; color: var(--muted); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.9rem; }
+    .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #374151; cursor: pointer; }
+    .checkbox-label input { width: auto; }
+    /* Image upload */
+    .image-upload-area { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+    .image-upload-area:hover { border-color: var(--accent); }
+    .image-preview { max-width: 100%; max-height: 180px; border-radius: 6px; margin-top: 10px; display: none; }
+    /* Scoring grid */
+    .score-section { margin-bottom: 20px; }
+    .score-section-title { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .score-input-group { display: flex; flex-direction: column; gap: 5px; }
+    .score-input-group label { font-size: 0.78rem; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; }
+    .score-input-group input { width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 6px; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; text-align: center; }
+    .score-input-group input:focus { outline: none; border-color: var(--accent); }
+    .calculated-band { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .calc-label { font-size: 0.82rem; color: #15803d; font-weight: 500; }
+    .calc-value { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #15803d; }
+    .writing-band-display { background: linear-gradient(135deg, #0d1117, #1e2d3d); border-radius: 10px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+    .wb-label { color: rgba(255,255,255,0.7); font-size: 0.88rem; }
+    .wb-value { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); }
+    /* Leaderboard */
+    .lb-test-block { margin-bottom: 32px; }
+    .lb-test-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 12px; }
+    .lb-rank { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-weight: 700; font-size: 0.85rem; }
+    .lb-rank-1 { background: #fef3c7; color: #92400e; }
+    .lb-rank-2 { background: #f1f5f9; color: #475569; }
+    .lb-rank-3 { background: #fff7ed; color: #9a3412; }
+    .lb-rank-n { background: #f8fafc; color: var(--muted); }
+    .band-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; background: #eff6ff; color: #1d4ed8; }
+    .band-pill.overall { background: #0d1117; color: var(--gold); }
+
+    /* Expandable rows */
+    tr.expandable-row { cursor: pointer; transition: background 0.15s; }
+    tr.expandable-row:hover td { background: #f0f4f9 !important; }
+    tr.expandable-row td:first-child::before { content: '▸ '; font-size: 0.7rem; color: var(--muted); transition: transform 0.2s; display: inline-block; }
+    tr.expandable-row.expanded td:first-child::before { content: '▾ '; color: var(--accent); }
+    .expand-row td { padding: 0 !important; border-bottom: 1px solid var(--border); }
+    .expand-inner { overflow: hidden; max-height: 0; transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1); }
+    .expand-inner.open { max-height: 800px; }
+    .expand-content { padding: 16px 20px; background: #f8fafc; }
+    .expand-content table { font-size: 0.85rem; }
+    .expand-content table th { background: #f0f4f9; }
+    .expand-empty { padding: 12px 20px; color: var(--muted); font-size: 0.85rem; background: #f8fafc; }
+    /* Stat card subtle hover */
+    .stat-card { transition: transform 0.15s, box-shadow 0.15s; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
+    /* Font fix for numbers in tables */
+    td .num { font-variant-numeric: tabular-nums; font-weight: 500; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="logo">IELTS<span>Pro</span></div>
+    <div class="nav-link active" id="nav-overview" onclick="showSection('overview')"><span class="icon">📊</span> Overview</div>
+    <div class="nav-link" id="nav-users" onclick="showSection('users')"><span class="icon">👥</span> Students</div>
+    <div class="nav-link" id="nav-tests" onclick="showSection('tests')"><span class="icon">📝</span> Tests</div>
+    <div class="nav-link" id="nav-submissions" onclick="showSection('submissions')"><span class="icon">📄</span> Submissions</div>
+    <div class="nav-link" id="nav-leaderboard" onclick="showSection('leaderboard')"><span class="icon">🏆</span> Leaderboard</div>
+    <a href="profile.html" class="nav-link"><span class="icon">⚙️</span> My Profile</a>
+    <div class="sidebar-bottom">
+      <div class="nav-link" style="color:#f87171;cursor:pointer;" onclick="logout()"><span class="icon">→</span> Sign Out</div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- Overview -->
+    <div id="section-overview" class="section active">
+      <div class="page-header">
+        <h1>Admin Dashboard</h1>
+        <p>Platform overview and management.</p>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">Quick Actions</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="add-btn" onclick="showSection('users');openUserModal()">+ Add Student</button>
+          <button class="add-btn" onclick="showSection('tests');openTestModal()">+ Add Test</button>
+          <button class="add-btn" style="background:#10b981;" onclick="showSection('submissions')">View Submissions</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students -->
+    <div id="section-users" class="section">
+      <div class="page-header"><h1>Students</h1><p>Manage student accounts.</p></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Students</div>
+          <button class="add-btn" onclick="openUserModal()">+ Add Student</button>
+        </div>
+        <div id="usersTable"></div>
+      </div>
+    </div>
+
+    <!-- Tests -->
+    <div id="section-tests" class="section">
+      <div class="page-header"><h1>Tests</h1><p>Manage exam tests.</p></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Tests</div>
+          <button class="add-btn" onclick="openTestModal()">+ Add Test</button>
+        </div>
+        <div id="testsTable"></div>
+      </div>
+    </div>
+
+    <!-- Submissions -->
+    <div id="section-submissions" class="section">
+      <div class="page-header"><h1>Submissions</h1><p>All student exam submissions. Use the Score button to assign band scores.</p></div>
+      <div id="subsContainer"></div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="section-leaderboard" class="section">
+      <div class="page-header"><h1>Leaderboard</h1><p>Top students ranked by writing band score per test.</p></div>
+      <div id="lbContainer"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ── User Modal ─────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <h3 id="userModalTitle">Add Student</h3>
+    <input type="hidden" id="editUserId">
+    <div class="form-group"><label>Username</label><input type="text" id="uUsername" placeholder="username"></div>
+    <div class="form-group"><label>Full Name</label><input type="text" id="uFullName" placeholder="Full name"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="uEmail" placeholder="email@example.com"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="uPassword" placeholder="Password"></div>
+    <div class="form-group"><label>Notes</label><input type="text" id="uAdditives" placeholder="Any notes"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('userModal')">Cancel</button>
+      <button class="btn-save" onclick="saveUser()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Test Modal ─────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="testModal">
+  <div class="modal">
+    <h3 id="testModalTitle">Add Test</h3>
+    <input type="hidden" id="editTestId">
+    <div class="form-group"><label>Test Title</label><input type="text" id="tTitle" placeholder="e.g. Practice Test 2"></div>
+    <div class="form-group"><label>Task 1 Prompt</label><textarea id="tTask1" rows="4" placeholder="Describe the chart/graph…"></textarea></div>
+    <div class="form-group">
+      <label>Task 1 Image (optional)</label>
+      <div class="image-upload-area" onclick="document.getElementById('tImageFile').click()">
+        <div id="imageUploadHint">📷 Click to upload chart / graph image</div>
+        <img id="imagePreview" class="image-preview" alt="Preview">
+      </div>
+      <input type="file" id="tImageFile" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+        <span id="imageFileName" style="font-size:0.8rem;color:var(--muted);">No image selected</span>
+        <button id="clearImageBtn" onclick="clearImage()" style="display:none;font-size:0.78rem;background:none;border:1px solid #fecaca;color:#ef4444;border-radius:4px;padding:2px 8px;cursor:pointer;">Remove</button>
+      </div>
+    </div>
+    <div class="form-group"><label>Task 2 Prompt</label><textarea id="tTask2" rows="4" placeholder="Essay question…"></textarea></div>
+    <div class="form-group">
+      <label class="checkbox-label"><input type="checkbox" id="tVisible" checked> Visible to students</label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('testModal')">Cancel</button>
+      <button class="btn-save" onclick="saveTest()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── View Submission Modal ──────────────────────────────────────────────── -->
+<div class="modal-overlay" id="subModal">
+  <div class="modal" style="max-width:680px;">
+    <h3 id="subModalTitle">Submission</h3>
+    <div id="subModalContent"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('subModal')" style="flex:none;padding:12px 28px;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Score Modal ────────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="scoreModal">
+  <div class="modal" style="max-width:600px;">
+    <h3 id="scoreModalTitle">Assign Band Scores</h3>
+    <input type="hidden" id="scoreSubId">
+    <div id="scoreModalMeta" style="font-size:0.84rem;color:var(--muted);margin-bottom:20px;"></div>
+
+    <!-- Task 1 -->
+    <div class="score-section">
+      <div class="score-section-title">Task 1 Criteria</div>
+      <div class="score-grid">
+        <div class="score-input-group">
+          <label>TA — Task Achievement</label>
+          <input type="number" id="s1TA" min="0" max="9" step="0.5" placeholder="0–9" oninput="recalc()">
+        </div>
+        <div class="score-input-group">
+          <label>CC — Coherence & Cohesion</label>
+          <input type="number" id="s1CC" min="0" max="9" step="0.5" placeholder="0–9" oninput="recalc()">
+        </div>
+        <div class="score-input-group">
+          <label>LR — Lexical Resource</label>
+          <input type="number" id="s1LR" min="0" max="9" step="0.5" placeholder="0–9" oninput="recalc()">
+        </div>
+        <div class="score-input-group">
+          <label>GRA — Grammatical Range</label>
+          <input type="number" id="s1GRA" min="0" max="9" step="0.5" placeholder="0–9" oninput="recalc()">
+        </div>
+      </div>
+      <div class="calculated-band">
+        <span class="calc-label">Task 1 Overall</span>
+        <span class="calc-value" id="calcT1">–</span>
+      </div>
+    </div>
+
+    <!-- Task 2 -->
+    <div class="score-section">
+      <div class="score-section-title">Task 2 Criteria</div>
+      <div class="score-grid">
+        <div class="score-input-group">
+          <label>TR — Task Response</label>
+          <input type="number" id="s2TR" min="0" max="9" step="0.5" placeholder="0–9" oninput="recalc()">
+        </div>
+        <div class="score-input-group">
+          <label>CC — Coherence & Cohesion</label>
+          <input type="number" id="s2CC" min="0" max="9" step="0.5" placeholder="0–9" oninput="recalc()">
+        </div>
+        <div class="score-input-group">
+          <label>LR — Lexical Resource</label>
+          <input type="number" id="s2LR" min="0" max="9" step="0.5" placeholder="0–9" oninput="recalc()">
+        </div>
+        <div class="score-input-group">
+          <label>GRA — Grammatical Range</label>
+          <input type="number" id="s2GRA" min="0" max="9" step="0.5" placeholder="0–9" oninput="recalc()">
+        </div>
+      </div>
+      <div class="calculated-band">
+        <span class="calc-label">Task 2 Overall</span>
+        <span class="calc-value" id="calcT2">–</span>
+      </div>
+    </div>
+
+    <!-- Writing Band -->
+    <div class="writing-band-display">
+      <span class="wb-label">Overall Writing Band Score<br><small style="opacity:0.6;">(T1 + 2×T2) ÷ 3</small></span>
+      <span class="wb-value" id="calcWB">–</span>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('scoreModal')">Cancel</button>
+      <button class="btn-score" onclick="saveScores()">Save Scores</button>
+    </div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+  requireAuth('admin');
+
+  function logout() { DB.clearSession(); window.location.href = 'login.html'; }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  let _pendingImageData = null; // base64 string for current edit
+
+  // ── Section nav ───────────────────────────────────────────────────────────
+  function showSection(name) {
+    ['overview','users','tests','submissions','leaderboard'].forEach(s => {
+      document.getElementById('section-' + s).classList.toggle('active', s === name);
+      document.getElementById('nav-' + s).classList.toggle('active', s === name);
+    });
+    if (name === 'users') renderUsers();
+    if (name === 'tests') renderTests();
+    if (name === 'submissions') renderSubs();
+    if (name === 'leaderboard') renderLeaderboard();
+    if (name === 'overview') renderStats();
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+  function renderStats() {
+    const s = DB.statsGlobal();
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card"><div class="stat-num" style="font-variant-numeric:tabular-nums">${s.active_students}</div><div class="stat-lbl">Active Students</div></div>
+      <div class="stat-card"><div class="stat-num" style="font-variant-numeric:tabular-nums">${s.total_submissions}</div><div class="stat-lbl">Total Submissions</div></div>
+      <div class="stat-card"><div class="stat-num" style="font-variant-numeric:tabular-nums">${s.avg_time}</div><div class="stat-lbl">Avg Minutes / Test</div></div>
+      <div class="stat-card"><div class="stat-num" style="font-variant-numeric:tabular-nums">${s.avg_words}</div><div class="stat-lbl">Avg Words / Test</div></div>`;
+  }
+  renderStats();
+
+  // ── Users ─────────────────────────────────────────────────────────────────
+  function renderUsers() {
+    const users = DB.getUsers('student');
+    const el = document.getElementById('usersTable');
+    if (!users.length) { el.innerHTML = '<div class="empty-state">No students yet.</div>'; return; }
+    el.innerHTML = `<table>
+      <thead><tr><th>#</th><th>Username</th><th>Full Name</th><th>Email</th><th>Submissions</th><th>Notes</th><th>Actions</th></tr></thead>
+      <tbody>${users.map(u => {
+        const subs = DB.getSubmissions({ user_id: u.id });
+        const stats = DB.statsForUser(u.id);
+        return `
+        <tr class="expandable-row" id="urow-${u.id}" onclick="toggleUserExpand(${u.id}, event)">
+          <td><span class="num">${u.id}</span></td>
+          <td><strong>${esc(u.username)}</strong></td>
+          <td>${esc(u.full_name)}</td>
+          <td>${esc(u.email)}</td>
+          <td><span class="num">${subs.length}</span>${stats && stats.avg_band ? ` · avg <span class="band-pill overall" style="font-size:0.72rem;padding:1px 7px;">${stats.avg_band}</span>` : ''}</td>
+          <td>${esc(u.additives)}</td>
+          <td><div class="btn-group">
+            <button class="action-btn primary" onclick="event.stopPropagation();openUserModal(${u.id})">Edit</button>
+            <button class="action-btn danger" onclick="event.stopPropagation();deleteUser(${u.id})">Delete</button>
+          </div></td>
+        </tr>
+        <tr class="expand-row" id="uexp-${u.id}">
+          <td colspan="7"><div class="expand-inner" id="uinner-${u.id}">
+            ${subs.length ? `<div class="expand-content">
+              <div style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Submissions by ${esc(u.full_name || u.username)}</div>
+              <table>
+                <thead><tr><th>Test</th><th>T1 Words</th><th>T2 Words</th><th>Time</th><th>Band</th><th>Date</th><th></th></tr></thead>
+                <tbody>${subs.map(s => {
+                  const t = DB.getTestById(s.test_id);
+                  return `<tr>
+                    <td>${esc(t ? t.title : '?')}</td>
+                    <td><span class="num">${s.task1_word_count}</span></td>
+                    <td><span class="num">${s.task2_word_count}</span></td>
+                    <td><span class="num">${s.time_spent_minutes}</span> min</td>
+                    <td>${s.writing_band != null ? `<span class="band-pill overall">${s.writing_band}</span>` : '<span style="color:var(--muted);font-size:0.78rem;">Unscored</span>'}</td>
+                    <td style="font-size:0.78rem;">${s.submitted_at}</td>
+                    <td><div class="btn-group">
+                      <button class="action-btn primary" onclick="viewSub(${s.id})">View</button>
+                      <button class="action-btn gold" onclick="openScoreModal(${s.id})">Score</button>
+                    </div></td>
+                  </tr>`;
+                }).join('')}</tbody>
+              </table>
+            </div>` : `<div class="expand-empty">No submissions yet from this student.</div>`}
+          </div></td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>`;
+  }
+
+  function toggleUserExpand(id, e) {
+    if (e && e.target.closest('.btn-group')) return;
+    const row = document.getElementById('urow-' + id);
+    const inner = document.getElementById('uinner-' + id);
+    const isOpen = inner.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.expand-inner').forEach(el => el.classList.remove('open'));
+    document.querySelectorAll('.expandable-row').forEach(el => el.classList.remove('expanded'));
+    if (!isOpen) { inner.classList.add('open'); row.classList.add('expanded'); }
+  }
+
+  function openUserModal(id) {
+    document.getElementById('editUserId').value = id || '';
+    document.getElementById('uUsername').disabled = !!id;
+    if (id) {
+      const u = DB.getUserById(id);
+      document.getElementById('userModalTitle').textContent = 'Edit Student';
+      document.getElementById('uUsername').value = u.username;
+      document.getElementById('uFullName').value = u.full_name || '';
+      document.getElementById('uEmail').value = u.email || '';
+      document.getElementById('uPassword').value = u.password || '';
+      document.getElementById('uAdditives').value = u.additives || '';
+    } else {
+      document.getElementById('userModalTitle').textContent = 'Add Student';
+      ['uUsername','uFullName','uEmail','uPassword','uAdditives'].forEach(i => document.getElementById(i).value = '');
+    }
+    document.getElementById('userModal').classList.add('show');
+  }
+
+  function saveUser() {
+    const id = parseInt(document.getElementById('editUserId').value);
+    const data = {
+      username: document.getElementById('uUsername').value.trim(),
+      full_name: document.getElementById('uFullName').value.trim(),
+      email: document.getElementById('uEmail').value.trim(),
+      password: document.getElementById('uPassword').value,
+      additives: document.getElementById('uAdditives').value.trim(),
+    };
+    if (!data.password) { alert('Password is required'); return; }
+    if (id) {
+      DB.editUser(id, data);
+    } else {
+      if (!data.username) { alert('Username is required'); return; }
+      if (!DB.addUser(data)) { alert('Username already exists'); return; }
+    }
+    closeModal('userModal');
+    renderUsers();
+    renderStats();
+  }
+
+  function deleteUser(id) {
+    if (!confirm('Delete this student and all their submissions?')) return;
+    DB.deleteUser(id);
+    renderUsers();
+    renderStats();
+  }
+
+  // ── Tests ─────────────────────────────────────────────────────────────────
+  function renderTests() {
+    const tests = DB.getTests();
+    const el = document.getElementById('testsTable');
+    if (!tests.length) { el.innerHTML = '<div class="empty-state">No tests yet.</div>'; return; }
+    el.innerHTML = `<table>
+      <thead><tr><th>#</th><th>Title</th><th>Task 1 Prompt</th><th>Image</th><th>Visible</th><th>Submissions</th><th>Actions</th></tr></thead>
+      <tbody>${tests.map(t => {
+        const subs = DB.getSubmissions({ test_id: t.id });
+        const scored = subs.filter(s => s.writing_band != null);
+        const avgBand = scored.length ? (scored.reduce((a,s) => a + s.writing_band, 0) / scored.length).toFixed(1) : null;
+        return `
+        <tr class="expandable-row" id="trow-${t.id}" onclick="toggleTestExpand(${t.id}, event)">
+          <td><span class="num">${t.id}</span></td>
+          <td><strong>${esc(t.title)}</strong></td>
+          <td><div class="answer-preview">${esc(t.task1_prompt)}</div></td>
+          <td>${t.task1_image_data ? '<span class="badge badge-green">✓ Image</span>' : '<span class="badge badge-gray">None</span>'}</td>
+          <td><span class="badge ${t.is_visible ? 'badge-green' : 'badge-gray'}">${t.is_visible ? 'Visible' : 'Hidden'}</span></td>
+          <td><span class="num">${subs.length}</span>${avgBand ? ` · avg <span class="band-pill overall" style="font-size:0.72rem;padding:1px 7px;">${avgBand}</span>` : ''}</td>
+          <td><div class="btn-group">
+            <button class="action-btn primary" onclick="event.stopPropagation();openTestModal(${t.id})">Edit</button>
+            <button class="action-btn" onclick="event.stopPropagation();DB.toggleTest(${t.id});renderTests()">${t.is_visible ? 'Hide' : 'Show'}</button>
+            <button class="action-btn danger" onclick="event.stopPropagation();deleteTest(${t.id})">Delete</button>
+          </div></td>
+        </tr>
+        <tr class="expand-row" id="texp-${t.id}">
+          <td colspan="7"><div class="expand-inner" id="tinner-${t.id}">
+            ${subs.length ? `<div class="expand-content">
+              <div style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Submissions for ${esc(t.title)}</div>
+              <table>
+                <thead><tr><th>Student</th><th>T1 Words</th><th>T2 Words</th><th>Time</th><th>Band</th><th>Date</th><th></th></tr></thead>
+                <tbody>${subs.map(s => {
+                  const u = DB.getUserById(s.user_id);
+                  return `<tr>
+                    <td><strong>${esc(u ? (u.full_name || u.username) : '?')}</strong></td>
+                    <td><span class="num">${s.task1_word_count}</span></td>
+                    <td><span class="num">${s.task2_word_count}</span></td>
+                    <td><span class="num">${s.time_spent_minutes}</span> min</td>
+                    <td>${s.writing_band != null ? `<span class="band-pill overall">${s.writing_band}</span>` : '<span style="color:var(--muted);font-size:0.78rem;">Unscored</span>'}</td>
+                    <td style="font-size:0.78rem;">${s.submitted_at}</td>
+                    <td><div class="btn-group">
+                      <button class="action-btn primary" onclick="viewSub(${s.id})">View</button>
+                      <button class="action-btn gold" onclick="openScoreModal(${s.id})">Score</button>
+                    </div></td>
+                  </tr>`;
+                }).join('')}</tbody>
+              </table>
+            </div>` : `<div class="expand-empty">No submissions for this test yet.</div>`}
+          </div></td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>`;
+  }
+
+  function toggleTestExpand(id, e) {
+    if (e && e.target.closest('.btn-group')) return;
+    const row = document.getElementById('trow-' + id);
+    const inner = document.getElementById('tinner-' + id);
+    const isOpen = inner.classList.contains('open');
+    document.querySelectorAll('.expand-inner').forEach(el => el.classList.remove('open'));
+    document.querySelectorAll('.expandable-row').forEach(el => el.classList.remove('expanded'));
+    if (!isOpen) { inner.classList.add('open'); row.classList.add('expanded'); }
+  }
+
+  function handleImageUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      _pendingImageData = e.target.result;
+      const preview = document.getElementById('imagePreview');
+      preview.src = _pendingImageData;
+      preview.style.display = 'block';
+      document.getElementById('imageUploadHint').style.display = 'none';
+      document.getElementById('imageFileName').textContent = file.name;
+      document.getElementById('clearImageBtn').style.display = 'inline-block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearImage() {
+    _pendingImageData = '';
+    document.getElementById('tImageFile').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('imagePreview').src = '';
+    document.getElementById('imageUploadHint').style.display = 'block';
+    document.getElementById('imageFileName').textContent = 'No image selected';
+    document.getElementById('clearImageBtn').style.display = 'none';
+  }
+
+  function openTestModal(id) {
+    _pendingImageData = null;
+    clearImage();
+    document.getElementById('editTestId').value = id || '';
+    if (id) {
+      const t = DB.getTestById(id);
+      document.getElementById('testModalTitle').textContent = 'Edit Test';
+      document.getElementById('tTitle').value = t.title;
+      document.getElementById('tTask1').value = t.task1_prompt;
+      document.getElementById('tTask2').value = t.task2_prompt;
+      document.getElementById('tVisible').checked = !!t.is_visible;
+      if (t.task1_image_data) {
+        const preview = document.getElementById('imagePreview');
+        preview.src = t.task1_image_data;
+        preview.style.display = 'block';
+        document.getElementById('imageUploadHint').style.display = 'none';
+        document.getElementById('imageFileName').textContent = 'Current image';
+        document.getElementById('clearImageBtn').style.display = 'inline-block';
+      }
+    } else {
+      document.getElementById('testModalTitle').textContent = 'Add Test';
+      ['tTitle','tTask1','tTask2'].forEach(i => document.getElementById(i).value = '');
+      document.getElementById('tVisible').checked = true;
+    }
+    document.getElementById('testModal').classList.add('show');
+  }
+
+  function saveTest() {
+    const id = parseInt(document.getElementById('editTestId').value);
+    const data = {
+      title: document.getElementById('tTitle').value.trim(),
+      task1_prompt: document.getElementById('tTask1').value.trim(),
+      task2_prompt: document.getElementById('tTask2').value.trim(),
+      is_visible: document.getElementById('tVisible').checked ? 1 : 0,
+      task1_image_data: _pendingImageData !== null ? _pendingImageData : (id ? undefined : ''),
+    };
+    if (!data.title || !data.task1_prompt || !data.task2_prompt) { alert('Title and prompts are required'); return; }
+    if (id) { DB.editTest(id, data); } else { DB.addTest(data); }
+    closeModal('testModal');
+    renderTests();
+    renderStats();
+  }
+
+  function deleteTest(id) {
+    if (!confirm('Delete this test and all related submissions?')) return;
+    DB.deleteTest(id);
+    renderTests();
+    renderStats();
+  }
+
+  // ── Submissions ────────────────────────────────────────────────────────────
+  function renderSubs() {
+    const subs = DB.getSubmissions({});
+    const el = document.getElementById('subsContainer');
+    if (!subs.length) { el.innerHTML = '<div class="card"><div class="empty-state">No submissions yet.</div></div>'; return; }
+    el.innerHTML = `<div class="card"><table>
+      <thead><tr><th>#</th><th>Student</th><th>Test</th><th>T1 Words</th><th>T2 Words</th><th>Time</th><th>Band</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody>${subs.map(s => {
+        const u = DB.getUserById(s.user_id);
+        const t = DB.getTestById(s.test_id);
+        const bandDisplay = s.writing_band != null ? `<span class="band-pill overall">${s.writing_band}</span>` : '<span style="color:var(--muted);font-size:0.82rem;">Unscored</span>';
+        return `<tr>
+          <td>${s.id}</td>
+          <td><strong>${esc(u ? u.full_name || u.username : '?')}</strong></td>
+          <td>${esc(t ? t.title : '?')}</td>
+          <td><span class="num">${s.task1_word_count}</span></td>
+          <td><span class="num">${s.task2_word_count}</span></td>
+          <td><span class="num">${s.time_spent_minutes}</span> min</td>
+          <td>${bandDisplay}</td>
+          <td style="font-size:0.8rem;">${s.submitted_at}</td>
+          <td><div class="btn-group">
+            <button class="action-btn primary" onclick="viewSub(${s.id})">View</button>
+            <button class="action-btn gold" onclick="openScoreModal(${s.id})">Score</button>
+            <button class="action-btn danger" onclick="deleteSub(${s.id})">Delete</button>
+          </div></td>
+        </tr>`;
+      }).join('')}
+      </tbody></table></div>`;
+  }
+
+  function viewSub(id) {
+    const subs = DB.getSubmissions({});
+    const s = subs.find(x => x.id === id);
+    if (!s) return;
+    const u = DB.getUserById(s.user_id);
+    const t = DB.getTestById(s.test_id);
+    const scoreHtml = s.writing_band != null ? `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+        <div style="background:#f0fdf4;border-radius:8px;padding:12px;">
+          <div style="font-size:0.72rem;font-weight:700;color:#15803d;text-transform:uppercase;margin-bottom:8px;">Task 1 Scores</div>
+          <div style="font-size:0.85rem;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+            <span>TA: <strong>${s.task1_scores.TA}</strong></span>
+            <span>CC: <strong>${s.task1_scores.CC}</strong></span>
+            <span>LR: <strong>${s.task1_scores.LR}</strong></span>
+            <span>GRA: <strong>${s.task1_scores.GRA}</strong></span>
+          </div>
+          <div style="margin-top:8px;font-size:0.9rem;font-weight:600;color:#15803d;">Overall: ${s.task1_scores.overall}</div>
+        </div>
+        <div style="background:#eff6ff;border-radius:8px;padding:12px;">
+          <div style="font-size:0.72rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;margin-bottom:8px;">Task 2 Scores</div>
+          <div style="font-size:0.85rem;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+            <span>TR: <strong>${s.task2_scores.TR}</strong></span>
+            <span>CC: <strong>${s.task2_scores.CC}</strong></span>
+            <span>LR: <strong>${s.task2_scores.LR}</strong></span>
+            <span>GRA: <strong>${s.task2_scores.GRA}</strong></span>
+          </div>
+          <div style="margin-top:8px;font-size:0.9rem;font-weight:600;color:#1d4ed8;">Overall: ${s.task2_scores.overall}</div>
+        </div>
+      </div>
+      <div style="background:#0d1117;border-radius:8px;padding:12px 16px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:rgba(255,255,255,0.7);font-size:0.88rem;">Overall Writing Band</span>
+        <span style="font-family:'Playfair Display',serif;font-size:1.8rem;color:#f0b429;">${s.writing_band}</span>
+      </div>` : '<div style="color:var(--muted);font-size:0.84rem;margin-top:8px;">Not yet scored. Click the Score button to assign band scores.</div>';
+
+    document.getElementById('subModalTitle').textContent = `Submission #${s.id} — ${u ? (u.full_name || u.username) : '?'}`;
+    document.getElementById('subModalContent').innerHTML = `
+      <div style="margin-bottom:12px;font-size:0.85rem;color:var(--muted);">Test: <strong>${esc(t ? t.title : '?')}</strong> · ${s.submitted_at} · ${s.time_spent_minutes} min</div>
+      ${scoreHtml}
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;margin-top:12px;">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Task 1 (${s.task1_word_count} words)</div>
+        <div style="font-size:0.88rem;line-height:1.7;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${esc(s.task1_answer || '(empty)')}</div>
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;margin-top:10px;">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Task 2 (${s.task2_word_count} words)</div>
+        <div style="font-size:0.88rem;line-height:1.7;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${esc(s.task2_answer || '(empty)')}</div>
+      </div>`;
+    document.getElementById('subModal').classList.add('show');
+  }
+
+  function deleteSub(id) {
+    if (!confirm('Delete this submission?')) return;
+    DB.deleteSubmission(id);
+    renderSubs();
+    renderStats();
+  }
+
+  // ── Scoring ───────────────────────────────────────────────────────────────
+  function openScoreModal(subId) {
+    const subs = DB.getSubmissions({});
+    const s = subs.find(x => x.id === subId);
+    if (!s) return;
+    const u = DB.getUserById(s.user_id);
+    const t = DB.getTestById(s.test_id);
+
+    document.getElementById('scoreSubId').value = subId;
+    document.getElementById('scoreModalTitle').textContent = `Score: ${u ? (u.full_name || u.username) : '?'}`;
+    document.getElementById('scoreModalMeta').textContent = `${t ? t.title : '?'} · Submitted ${s.submitted_at}`;
+
+    // Pre-fill if already scored
+    const t1 = s.task1_scores || {};
+    const t2 = s.task2_scores || {};
+    document.getElementById('s1TA').value = t1.TA ?? '';
+    document.getElementById('s1CC').value = t1.CC ?? '';
+    document.getElementById('s1LR').value = t1.LR ?? '';
+    document.getElementById('s1GRA').value = t1.GRA ?? '';
+    document.getElementById('s2TR').value = t2.TR ?? '';
+    document.getElementById('s2CC').value = t2.CC ?? '';
+    document.getElementById('s2LR').value = t2.LR ?? '';
+    document.getElementById('s2GRA').value = t2.GRA ?? '';
+    recalc();
+    document.getElementById('scoreModal').classList.add('show');
+  }
+
+  function roundBand(x) { return Math.round(x * 2) / 2; }
+
+  function recalc() {
+    const s1 = [+document.getElementById('s1TA').value, +document.getElementById('s1CC').value,
+                 +document.getElementById('s1LR').value, +document.getElementById('s1GRA').value];
+    const s2 = [+document.getElementById('s2TR').value, +document.getElementById('s2CC').value,
+                 +document.getElementById('s2LR').value, +document.getElementById('s2GRA').value];
+    const allFilled = [...s1, ...s2].every(v => !isNaN(v) && v !== 0 || v === 0);
+    const s1Valid = s1.every(v => v >= 0 && v <= 9);
+    const s2Valid = s2.every(v => v >= 0 && v <= 9);
+
+    if (s1.some(v => isNaN(v) || document.getElementById('s1TA').value === '')) {
+      document.getElementById('calcT1').textContent = '–';
+    } else {
+      const t1 = roundBand(s1.reduce((a,b)=>a+b,0)/4);
+      document.getElementById('calcT1').textContent = t1;
+    }
+    if (s2.some(v => isNaN(v) || document.getElementById('s2TR').value === '')) {
+      document.getElementById('calcT2').textContent = '–';
+    } else {
+      const t2 = roundBand(s2.reduce((a,b)=>a+b,0)/4);
+      document.getElementById('calcT2').textContent = t2;
+    }
+
+    const t1txt = document.getElementById('calcT1').textContent;
+    const t2txt = document.getElementById('calcT2').textContent;
+    if (t1txt !== '–' && t2txt !== '–') {
+      document.getElementById('calcWB').textContent = roundBand((+t1txt + 2 * +t2txt) / 3);
+    } else {
+      document.getElementById('calcWB').textContent = '–';
+    }
+  }
+
+  function saveScores() {
+    const id = parseInt(document.getElementById('scoreSubId').value);
+    const fields = ['s1TA','s1CC','s1LR','s1GRA','s2TR','s2CC','s2LR','s2GRA'];
+    for (const f of fields) {
+      const v = document.getElementById(f).value;
+      if (v === '' || isNaN(+v) || +v < 0 || +v > 9) { alert('Please enter valid scores (0–9) for all criteria.'); return; }
+    }
+    DB.saveScores(id,
+      { TA: document.getElementById('s1TA').value, CC: document.getElementById('s1CC').value, LR: document.getElementById('s1LR').value, GRA: document.getElementById('s1GRA').value },
+      { TR: document.getElementById('s2TR').value, CC: document.getElementById('s2CC').value, LR: document.getElementById('s2LR').value, GRA: document.getElementById('s2GRA').value }
+    );
+    closeModal('scoreModal');
+    renderSubs();
+  }
+
+  // ── Leaderboard ───────────────────────────────────────────────────────────
+  function renderLeaderboard() {
+    const tests = DB.getTests();
+    const el = document.getElementById('lbContainer');
+    if (!tests.length) { el.innerHTML = '<div class="card"><div class="empty-state">No tests available.</div></div>'; return; }
+
+    let html = '';
+    for (const t of tests) {
+      const lb = DB.getLeaderboard(t.id);
+      html += `<div class="card lb-test-block">
+        <div class="lb-test-title">🏆 ${esc(t.title)}</div>`;
+      if (!lb.length) {
+        html += '<div style="color:var(--muted);font-size:0.88rem;">No scored submissions yet for this test.</div>';
+      } else {
+        html += `<table>
+          <thead><tr><th>Rank</th><th>Student</th><th>Task 1</th><th>Task 2</th><th>Writing Band</th></tr></thead>
+          <tbody>${lb.map((s, i) => {
+            const rankClass = i === 0 ? 'lb-rank-1' : i === 1 ? 'lb-rank-2' : i === 2 ? 'lb-rank-3' : 'lb-rank-n';
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+            return `<tr>
+              <td><span class="lb-rank ${rankClass}">${medal}</span></td>
+              <td><strong>${esc(s.user ? (s.user.full_name || s.user.username) : '?')}</strong></td>
+              <td><span class="band-pill">${s.task1_scores.overall}</span></td>
+              <td><span class="band-pill">${s.task2_scores.overall}</span></td>
+              <td><span class="band-pill overall">${s.writing_band}</span></td>
+            </tr>`;
+          }).join('')}</tbody></table>`;
+      }
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  // ── Modal helpers ─────────────────────────────────────────────────────────
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+  document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); }));
+
+  // ── Hash routing ──────────────────────────────────────────────────────────
+  const hash = window.location.hash.replace('#','');
+  if (['users','tests','submissions','leaderboard'].includes(hash)) showSection(hash);
+</script>
+</body>
+</html>

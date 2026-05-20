@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — IELTSPro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink: #0d1117; --accent: #2a6ef5; --gold: #f0b429; --bg: #f0f4f9; --card: #fff; --border: #e2e8f0; --muted: #64748b; --success: #10b981; --danger: #ef4444; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: var(--ink); padding: 28px 20px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: white; margin-bottom: 32px; padding: 0 8px; }
+    .logo span { color: var(--gold); }
+    .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,0.55); font-size: 0.9rem; text-decoration: none; transition: all 0.18s; }
+    .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.07); color: white; }
+    .nav-link .icon { font-size: 1.1rem; width: 22px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .main { flex: 1; padding: 40px; max-width: 800px; }
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 4px; }
+    .page-header p { color: var(--muted); font-size: 0.92rem; }
+    .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 28px; margin-bottom: 20px; }
+    .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 20px; }
+    .profile-top { margin-bottom: 20px; }
+    .profile-top h2 { font-size: 1.4rem; margin-bottom: 4px; }
+    .profile-meta span { font-size: 0.85rem; color: var(--muted); }
+    .role-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: #dbeafe; color: #1d4ed8; margin-top: 6px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+    .stat-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 18px; text-align: center; }
+    .stat-num { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--accent); }
+    .stat-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+    .stat-num.gold { color: var(--gold); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: #374151; margin-bottom: 7px; }
+    input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; color: var(--ink); transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(42,110,245,0.1); }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+    .save-btn { background: var(--accent); color: white; border: none; padding: 12px 28px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+    .save-btn:hover { background: #1d4ed8; }
+    .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; display: none; }
+    .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+    .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: var(--danger); }
+    .back-link { color: var(--accent); text-decoration: none; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 24px; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="logo">IELTS<span>Pro</span></div>
+    <div id="sidebarLinks"></div>
+    <a href="profile.html" class="nav-link active"><span class="icon">👤</span> My Profile</a>
+    <div class="sidebar-bottom">
+      <div class="nav-link" style="color:#f87171;cursor:pointer;" onclick="logout()"><span class="icon">→</span> Sign Out</div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <a id="backLink" href="#" class="back-link">← Back</a>
+    <div class="page-header">
+      <h1>My Profile</h1>
+      <p>Manage your account information and password.</p>
+    </div>
+    <div class="alert alert-success" id="msgSuccess"></div>
+    <div class="alert alert-error" id="msgError"></div>
+
+    <div class="card">
+      <div class="profile-top">
+        <h2 id="dispName"></h2>
+        <div class="profile-meta">
+          <span id="dispUsername"></span>
+        </div>
+        <div class="role-badge" id="dispRole"></div>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✏️ Edit Profile</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="fullName" placeholder="Your full name">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="email" placeholder="your@email.com">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="card-title" style="margin-bottom:16px;">🔒 Change Password</div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">Leave blank to keep your current password.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Current Password</label>
+          <input type="password" id="currentPassword" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <input type="password" id="newPassword" placeholder="••••••••">
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </main>
+</div>
+
+<script src="db.js"></script>
+<script>
+  const user = requireAuth();
+  if (!user) throw '';
+
+  function logout() { DB.clearSession(); window.location.href = 'login.html'; }
+
+  const isAdmin = user.role === 'admin';
+  document.getElementById('sidebarLinks').innerHTML = isAdmin
+    ? `<a href="admin_dashboard.html" class="nav-link"><span class="icon">📊</span> Admin Panel</a>`
+    : `<a href="student_dashboard.html" class="nav-link"><span class="icon">🏠</span> Dashboard</a>
+       <a href="student_dashboard.html#submissions" class="nav-link"><span class="icon">📄</span> My Submissions</a>
+       <a href="student_dashboard.html#leaderboard" class="nav-link"><span class="icon">🏆</span> Leaderboard</a>`;
+  document.getElementById('backLink').href = isAdmin ? 'admin_dashboard.html' : 'student_dashboard.html';
+
+  function render() {
+    const u = DB.currentUser();
+    document.getElementById('dispName').textContent = u.full_name || u.username;
+    document.getElementById('dispUsername').textContent = '@' + u.username;
+    document.getElementById('dispRole').textContent = u.role.charAt(0).toUpperCase() + u.role.slice(1);
+    document.getElementById('fullName').value = u.full_name || '';
+    document.getElementById('email').value = u.email || '';
+
+    if (u.role === 'student') {
+      const s = DB.statsForUser(u.id);
+      document.getElementById('statsGrid').innerHTML = s ? `
+        <div class="stat-box"><div class="stat-num">${s.total}</div><div class="stat-lbl">Tests Completed</div></div>
+        <div class="stat-box"><div class="stat-num">${s.avg_time}</div><div class="stat-lbl">Avg. Minutes / Test</div></div>
+        <div class="stat-box"><div class="stat-num ${s.avg_band ? 'gold' : ''}">${s.avg_band ?? '—'}</div><div class="stat-lbl">Avg. Band Score</div></div>
+      ` : '';
+    }
+  }
+  render();
+
+  function saveProfile() {
+    const u = DB.currentUser();
+    const fullName = document.getElementById('fullName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const currentPw = document.getElementById('currentPassword').value;
+    const newPw = document.getElementById('newPassword').value;
+
+    if (currentPw && u.password !== currentPw) {
+      showAlert('error', '⚠️ Current password is incorrect');
+      return;
+    }
+    const update = { full_name: fullName, email };
+    if (newPw) update.password = newPw;
+    DB.editUser(u.id, update);
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    showAlert('success', '✅ Profile updated successfully!');
+    render();
+  }
+
+  function showAlert(type, msg) {
+    const s = document.getElementById('msgSuccess'), e = document.getElementById('msgError');
+    s.style.display = 'none'; e.style.display = 'none';
+    const el = type === 'success' ? s : e;
+    el.textContent = msg; el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard — IELTSPro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink: #0d1117; --accent: #2a6ef5; --gold: #f0b429; --bg: #f0f4f9; --card: #fff; --border: #e2e8f0; --muted: #64748b; --success: #10b981; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 240px; background: var(--ink); padding: 28px 20px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: white; margin-bottom: 32px; padding: 0 8px; }
+    .logo span { color: var(--gold); }
+    .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,0.55); font-size: 0.9rem; text-decoration: none; transition: all 0.18s; cursor: pointer; }
+    .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.07); color: white; }
+    .nav-link .icon { font-size: 1.1rem; width: 22px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-chip { padding: 10px 12px; margin-bottom: 8px; }
+    .user-info strong { display: block; color: white; font-size: 0.88rem; }
+    .user-info span { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+    .main { flex: 1; padding: 40px; overflow-y: auto; }
+    .page-header { margin-bottom: 32px; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 4px; }
+    .page-header p { color: var(--muted); font-size: 0.92rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .test-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 24px; transition: box-shadow 0.2s, transform 0.2s; }
+    .test-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .test-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+    .test-meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
+    .start-btn { display: inline-block; background: var(--accent); color: white; padding: 10px 18px; border-radius: 7px; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background 0.15s; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; }
+    .start-btn:hover { background: #1d4ed8; }
+    .start-btn.done { background: #94a3b8; cursor: not-allowed; }
+    .badge-new { background: #fef9ec; color: #b45309; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; border: 1px solid #fde68a; display: inline-block; margin-bottom: 10px; }
+    .badge-done { background: #f0fdf4; color: #15803d; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; border: 1px solid #bbf7d0; display: inline-block; margin-bottom: 10px; }
+    .section-hidden { display: none; }
+    /* Submissions */
+    .submission-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 16px; }
+    .sub-title { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+    .sub-meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 14px; }
+    .sub-stats { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .stat-pill { background: #f8fafc; border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; color: #374151; font-variant-numeric: tabular-nums; }
+    /* Band score display */
+    .score-block { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+    .score-block-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 10px; }
+    .criteria-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .crit-chip { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; }
+    .crit-chip strong { color: var(--accent); }
+    .overall-chip { background: var(--accent); color: white; border-radius: 6px; padding: 4px 12px; font-size: 0.85rem; font-weight: 600; }
+    .writing-band-card { background: #0d1117; border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .wb-label { color: rgba(255,255,255,0.7); font-size: 0.85rem; }
+    .wb-score { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); font-variant-numeric: tabular-nums; }
+    .unscored-note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #92400e; margin-bottom: 12px; }
+    /* Answers */
+    .answer-block { background: #f8fafc; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+    .answer-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+    .answer-text { font-size: 0.9rem; line-height: 1.65; color: #374151; white-space: pre-wrap; max-height: 160px; overflow-y: auto; }
+    .toggle-answer { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; font-size: 0.82rem; cursor: pointer; color: var(--accent); font-family: inherit; transition: all 0.15s; }
+    .toggle-answer:hover { background: var(--accent); color: white; border-color: var(--accent); }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 14px; }
+    /* Leaderboard */
+    .lb-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 20px; }
+    .lb-card-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th { text-align: left; padding: 10px 12px; background: #f8fafc; border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    .lb-rank { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-weight: 700; font-size: 0.82rem; }
+    .lb-you { background: #eff6ff; }
+    .band-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-weight: 700; font-size: 0.82rem; background: #eff6ff; color: #1d4ed8; }
+    .band-pill.overall { background: #0d1117; color: var(--gold); }
+    .you-tag { font-size: 0.7rem; font-weight: 600; background: var(--accent); color: white; padding: 1px 6px; border-radius: 20px; margin-left: 6px; }
+
+    /* Band score progress bars */
+    .band-progress { margin-top: 4px; }
+    .band-bar { height: 3px; background: #e2e8f0; border-radius: 2px; overflow: hidden; margin-top: 3px; }
+    .band-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+    /* Card entrance animations */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .test-card { animation: fadeUp 0.3s ease both; }
+    .submission-card { animation: fadeUp 0.3s ease both; }
+    .submission-card:nth-child(2) { animation-delay: 0.05s; }
+    .submission-card:nth-child(3) { animation-delay: 0.1s; }
+    .submission-card:nth-child(4) { animation-delay: 0.15s; }
+    /* Fix crit-chip numbers */
+    .crit-chip strong { color: var(--accent); font-variant-numeric: tabular-nums; }
+    .overall-chip { font-variant-numeric: tabular-nums; }
+    /* Improve test card */
+    .test-card { position: relative; overflow: hidden; }
+    .test-card::after { content: ''; position: absolute; inset: 0; border-radius: 12px; box-shadow: inset 0 0 0 2px transparent; transition: box-shadow 0.2s; pointer-events: none; }
+    .test-card:hover::after { box-shadow: inset 0 0 0 2px var(--accent); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="logo">IELTS<span>Pro</span></div>
+    <div class="nav-link active" id="navTests" onclick="showSection('tests')"><span class="icon">🏠</span> Dashboard</div>
+    <div class="nav-link" id="navSubs" onclick="showSection('submissions')"><span class="icon">📄</span> My Submissions</div>
+    <div class="nav-link" id="navLB" onclick="showSection('leaderboard')"><span class="icon">🏆</span> Leaderboard</div>
+    <a href="profile.html" class="nav-link"><span class="icon">👤</span> My Profile</a>
+    <div class="sidebar-bottom">
+      <div class="user-chip">
+        <div class="user-info">
+          <strong id="userName">...</strong>
+          <span>Student</span>
+        </div>
+      </div>
+      <div class="nav-link" style="color:#f87171;" onclick="logout()"><span class="icon">→</span> Sign Out</div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- Tests Section -->
+    <div id="section-tests">
+      <div class="page-header">
+        <h1>Your Exam Dashboard</h1>
+        <p>Choose a writing test to begin your timed session.</p>
+      </div>
+      <div class="grid" id="testsGrid"></div>
+    </div>
+
+    <!-- Submissions Section -->
+    <div id="section-submissions" class="section-hidden">
+      <div class="page-header">
+        <h1>My Submissions</h1>
+        <p>Review your past exam answers and band scores.</p>
+      </div>
+      <div id="subsContainer"></div>
+    </div>
+
+    <!-- Leaderboard Section -->
+    <div id="section-leaderboard" class="section-hidden">
+      <div class="page-header">
+        <h1>Leaderboard</h1>
+        <p>Top students ranked by writing band score per test.</p>
+      </div>
+      <div id="lbContainer"></div>
+    </div>
+  </main>
+</div>
+
+<script src="db.js"></script>
+<script>
+  const user = requireAuth('student');
+  if (!user) throw '';
+
+  document.getElementById('userName').textContent = user.full_name || user.username;
+
+  function showSection(name) {
+    ['tests','submissions','leaderboard'].forEach(s => {
+      document.getElementById('section-' + s).classList.toggle('section-hidden', s !== name);
+    });
+    document.getElementById('navTests').classList.toggle('active', name === 'tests');
+    document.getElementById('navSubs').classList.toggle('active', name === 'submissions');
+    document.getElementById('navLB').classList.toggle('active', name === 'leaderboard');
+    if (name === 'submissions') renderSubs();
+    if (name === 'leaderboard') renderLeaderboard();
+  }
+
+  function logout() { DB.clearSession(); window.location.href = 'login.html'; }
+
+  // ── Render tests ────────────────────────────────────────────────────────
+  function renderTests() {
+    const tests = DB.getTests(true);
+    const grid = document.getElementById('testsGrid');
+    if (!tests.length) {
+      grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><p>No exams available right now.<br>Check back soon!</p></div>';
+      return;
+    }
+    grid.innerHTML = tests.map(t => {
+      const done = DB.hasSubmitted(user.id, t.id);
+      return `
+        <div class="test-card">
+          <div class="${done ? 'badge-done' : 'badge-new'}">${done ? '✅ Completed' : '📝 Writing Test'}</div>
+          <h3>${esc(t.title)}</h3>
+          <div class="test-meta">⏱️ 60 minutes total<br>📋 Task 1 + Task 2<br>🎯 Academic Writing Module</div>
+          ${done
+            ? `<button class="start-btn done" disabled>Already Submitted</button>`
+            : `<button class="start-btn" onclick="startTest(${t.id})">Start Exam →</button>`
+          }
+        </div>`;
+    }).join('');
+  }
+
+  function startTest(id) {
+    if (DB.hasSubmitted(user.id, id)) return;
+    sessionStorage.setItem('ielts_exam_test_id', id);
+    sessionStorage.removeItem('ielts_task1_answer');
+    sessionStorage.removeItem('ielts_time_left');
+    window.location.href = 'exam_task1.html';
+  }
+
+  // ── Render submissions ──────────────────────────────────────────────────
+  function renderSubs() {
+    const subs = DB.getSubmissions({ user_id: user.id });
+    const container = document.getElementById('subsContainer');
+    if (!subs.length) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>You haven\'t submitted any exams yet.</p></div>';
+      return;
+    }
+    container.innerHTML = subs.map(s => {
+      const test = DB.getTestById(s.test_id);
+      const scored = s.writing_band != null;
+
+      const scoreHtml = scored ? `
+        <div class="writing-band-card">
+          <div class="wb-label">Overall Writing Band Score</div>
+          <div class="wb-score">${s.writing_band}</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:8px;padding:8px 14px;margin-bottom:10px;">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:5px;">Band progress (out of 9)</div>
+          <div class="band-bar"><div class="band-fill" style="width:${Math.round((s.writing_band/9)*100)}%;background:${s.writing_band>=7?'#10b981':s.writing_band>=5.5?'#f59e0b':'#ef4444'};"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div class="score-block">
+            <div class="score-block-title">Task 1</div>
+            <div class="criteria-row">
+              <div class="crit-chip">TA <strong>${s.task1_scores.TA}</strong></div>
+              <div class="crit-chip">CC <strong>${s.task1_scores.CC}</strong></div>
+              <div class="crit-chip">LR <strong>${s.task1_scores.LR}</strong></div>
+              <div class="crit-chip">GRA <strong>${s.task1_scores.GRA}</strong></div>
+            </div>
+            <div style="margin-top:8px;"><span class="overall-chip">Overall ${s.task1_scores.overall}</span></div>
+          </div>
+          <div class="score-block">
+            <div class="score-block-title">Task 2</div>
+            <div class="criteria-row">
+              <div class="crit-chip">TR <strong>${s.task2_scores.TR}</strong></div>
+              <div class="crit-chip">CC <strong>${s.task2_scores.CC}</strong></div>
+              <div class="crit-chip">LR <strong>${s.task2_scores.LR}</strong></div>
+              <div class="crit-chip">GRA <strong>${s.task2_scores.GRA}</strong></div>
+            </div>
+            <div style="margin-top:8px;"><span class="overall-chip">Overall ${s.task2_scores.overall}</span></div>
+          </div>
+        </div>` : `<div class="unscored-note">⏳ Not yet scored — your teacher will review and assign band scores soon.</div>`;
+
+      return `
+        <div class="submission-card">
+          <div class="sub-title">${esc(test ? test.title : 'Unknown Test')}</div>
+          <div class="sub-meta">Submitted: ${s.submitted_at}</div>
+          <div class="sub-stats">
+            <span class="stat-pill">⏱️ ${s.time_spent_minutes} min</span>
+            <span class="stat-pill">📝 Task 1: ${s.task1_word_count} words</span>
+            <span class="stat-pill">✍️ Task 2: ${s.task2_word_count} words</span>
+          </div>
+          ${scoreHtml}
+          <div id="ans-${s.id}" style="display:none;">
+            <div class="answer-block"><div class="answer-label">Task 1 Response</div><div class="answer-text">${esc(s.task1_answer || '(No answer recorded)')}</div></div>
+            <div class="answer-block"><div class="answer-label">Task 2 Response</div><div class="answer-text">${esc(s.task2_answer || '(No answer recorded)')}</div></div>
+          </div>
+          <button class="toggle-answer" onclick="toggleAns(${s.id}, this)">Show My Answers ▼</button>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Leaderboard ───────────────────────────────────────────────────────────
+  function renderLeaderboard() {
+    const tests = DB.getTests(true);
+    const el = document.getElementById('lbContainer');
+    if (!tests.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏆</div><p>No tests available yet.</p></div>'; return; }
+
+    let html = '';
+    for (const t of tests) {
+      const lb = DB.getLeaderboard(t.id);
+      html += `<div class="lb-card"><div class="lb-card-title">🏆 ${esc(t.title)}</div>`;
+      if (!lb.length) {
+        html += '<div style="color:var(--muted);font-size:0.88rem;padding:8px 0;">No scored submissions yet for this test.</div>';
+      } else {
+        html += `<table><thead><tr><th>Rank</th><th>Student</th><th>Task 1</th><th>Task 2</th><th>Writing Band</th></tr></thead><tbody>`;
+        lb.forEach((s, i) => {
+          const isMe = s.user_id === user.id;
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+          const name = esc(s.user ? (s.user.full_name || s.user.username) : '?');
+          html += `<tr style="${isMe ? 'background:#eff6ff;' : ''}">
+            <td><span class="lb-rank">${medal}</span></td>
+            <td><strong>${name}</strong>${isMe ? '<span class="you-tag">You</span>' : ''}</td>
+            <td><span class="band-pill">${s.task1_scores.overall}</span></td>
+            <td><span class="band-pill">${s.task2_scores.overall}</span></td>
+            <td><span class="band-pill overall">${s.writing_band}</span></td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  function toggleAns(id, btn) {
+    const el = document.getElementById('ans-' + id);
+    const hidden = el.style.display === 'none';
+    el.style.display = hidden ? 'block' : 'none';
+    btn.textContent = hidden ? 'Hide My Answers ▲' : 'Show My Answers ▼';
+  }
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  renderTests();
+  if (window.location.hash === '#submissions') showSection('submissions');
+  if (window.location.hash === '#leaderboard') showSection('leaderboard');
+</script>
+</body>
+</html>
